@@ -1,3 +1,5 @@
+apiVersion: apps/v1
+kind: Deployment # Kubernetes resource kind we are creating
 metadata:
   name: boardgame-deployment
 spec:
@@ -30,5 +32,5 @@ spec:
   ports:
     - protocol: "TCP"
       port: 80
-      targetPort: 8080
-  type: LoadBalancer
+      targetPort: 8080 
+  type: LoadBalancer # type of the service.
