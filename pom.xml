@@ -119,13 +119,9 @@
 
 	 <distributionManagement>
         <repository>
-            <id>maven-releases</id>
-            <url>http://34.228.74.29:8081/repository/maven-releases/</url>
+            <id>Board-Game</id>
+            <url>http://34.228.74.29:8081/repository/Board-Game/</url>
         </repository>
-        <snapshotRepository>
-            <id>maven-snapshots</id>
-            <url>http://34.228.74.29:8081/repository/maven-snapshots/</url>
-        </snapshotRepository>
     </distributionManagement>
 
 </project>
