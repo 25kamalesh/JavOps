@@ -1,0 +1,173 @@
+pipeline {
+    agent any
+
+    tools {
+        jdk 'JDK17'
+        maven 'MAVEN3.9'
+    }
+
+    environment {
+        SCANNER_HOME= tool 'SonarScanner'
+    }
+    
+    stages {
+        stage('Git Fetch') {
+            steps {
+                git credentialsId: 'Github_SECRET_LOGIN', url: 'https://github.com/25kamalesh/BoardGame.git'
+            }
+        }
+
+        stage('Code Compilation') {
+            steps {
+                sh 'mvn compile'
+            }
+        }
+
+        stage('Maven Testing') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage('File-System Check') {
+            steps {
+                sh 'trivy fs --format table -o trivy-file-check-report.html .'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarServer') {
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=BoardGame -Dsonar.projectKey=BoardGame \
+                            -Dsonar.java.binaries=. '''
+                }
+            }
+        }
+
+
+        stage('Maven Build') {
+            steps {
+                sh 'mvn package'
+            }
+        }
+
+        stage('Nexus Artifact Publish') {
+            steps {
+               nexusArtifactUploader(
+                  nexusVersion: 'nexus3',
+                  protocol: 'http',
+                  nexusUrl: '34.228.74.29:8081',
+                  groupId: 'QA',
+                  version: "${env.BUILD_ID}",
+                  repository: 'Board-Game',
+                  credentialsId: 'Nexus_Repo_Creds',
+                  artifacts: [
+                    [artifactId: 'BoardGame',
+                     classifier: '',
+                     file: 'target/database_service_project-0.0.7.jar',
+                     type: 'jar']
+                    ]
+                )
+              
+            }
+        }
+
+        stage('Docker Build and Tag') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'Docker_UI_PASSWRD', toolName: 'Docker') {
+                        sh "docker build -t kamalesh25/boardgame-kamalesh:v${env.BUILD_NUMBER} ."
+                    }
+                }
+            }
+        }
+
+        stage('Docker Image Scan') {
+            steps {
+                    sh "trivy image --format table -o trivy-image-check-report.html kamalesh25/boardgame-kamalesh:v${env.BUILD_NUMBER}"
+            }
+        }
+
+        stage('Docker Publish Image') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'Docker_UI_PASSWRD', toolName: 'Docker') {
+                        sh "docker push kamalesh25/boardgame-kamalesh:v${env.BUILD_NUMBER}"
+                    }
+                    
+                }
+            }
+        }
+
+        stage('Deploy in Kubernetes') {
+            steps {
+                withKubeConfig(caCertificate: '', 
+                    clusterName: 'kubevpro.pbktech.online', 
+                    contextName: '', 
+                    credentialsId: 'k8-Creds', 
+                    namespace: 'webapps', 
+                    restrictKubeConfigAccess: false, 
+                    serverUrl: 'https://api.kubevpro.pbktech.online') {
+                        script {
+                            sh """
+                            sed -i 's|IMAGE_PLACEHOLDER|kamalesh25/boardgame-kamalesh:v${env.BUILD_NUMBER}|g' deployment-service.yaml
+
+                            """
+                            sh 'kubectl apply -f deployment-service.yaml'
+                        }
+                }
+            }
+        }
+
+        stage('Verify Kube Deployment') {
+            steps {
+                withKubeConfig(caCertificate: '', 
+                    clusterName: 'kubevpro.pbktech.online', 
+                    contextName: '', 
+                    credentialsId: 'k8-Creds', 
+                    namespace: 'webapps', 
+                    restrictKubeConfigAccess: false, 
+                    serverUrl: 'https://api.kubevpro.pbktech.online') {
+                    
+                    sh 'kubectl get pods -n webapps' 
+                    sh 'kubectl get svc -n webapps'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                def jobName = env.JOB_NAME
+                def buildNumber = env.BUILD_NUMBER
+                def pipelineStatus = currentBuild.result ?: 'SUCCESS'
+                def bannerColor = pipelineStatus.toUpperCase() == 'SUCCESS' ? 'green' : 'red'
+
+                def body = """
+                    <html>
+                    <body>
+                    <div style="border: 4px solid ${bannerColor}; padding: 10px;">
+                    <h2>${jobName} - Build ${buildNumber}</h2>
+                    <div style="background-color: ${bannerColor}; padding: 10px;">
+                    <h3 style="color: white;">Pipeline Status: ${pipelineStatus.toUpperCase()}</h3>
+                    </div>
+                    <p>Check the <a href="${env.BUILD_URL}">console output</a>.</p>
+                    </div>
+                    </body>
+                    </html>
+                """
+
+                emailext (
+                    subject: "${jobName} - Build ${buildNumber} - ${pipelineStatus.toUpperCase()}",
+                    body: body,
+                    to: 'kamaleshb.2004@gmail.com',
+                    from: 'jenkins@example.com',
+                    replyTo: 'jenkins@example.com',
+                    mimeType: 'text/html',
+                    attachmentsPattern: 'trivy-image-check-report.html'
+                )
+            }
+        }
+    }
+}
