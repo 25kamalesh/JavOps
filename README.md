@@ -1,53 +1,157 @@
-# BoardgameListingWebApp
+# BoardGame Web Application - DevOps CI/CD Pipeline
 
 ## Description
 
-**Board Game Database Full-Stack Web Application.**
-This web application displays lists of board games and their reviews. While anyone can view the board game lists and reviews, they are required to log in to add/ edit the board games and their reviews. The 'users' have the authority to add board games to the list and add reviews, and the 'managers' have the authority to edit/ delete the reviews on top of the authorities of users.  
+A full-stack Spring Boot web application for managing board games and reviews with role-based access control. This project demonstrates end-to-end DevOps practices including CI/CD automation, containerization, Kubernetes deployment, security scanning, and monitoring.
 
-## Technologies
+**Key Capabilities:**
+- Users can view, add, and review board games
+- Role-based permissions (Non-members, Users, Managers)
+- Automated build, test, scan, and deployment pipeline
+- Container orchestration with Kubernetes
+- Real-time monitoring with Prometheus and Grafana
 
-- Java
-- Spring Boot
-- Amazon Web Services(AWS) EC2
-- Thymeleaf
-- Thymeleaf Fragments
-- HTML5
-- CSS
-- JavaScript
-- Spring MVC
-- JDBC
-- H2 Database Engine (In-memory)
-- JUnit test framework
-- Spring Security
-- Twitter Bootstrap
-- Maven
+## Technology Stack
 
-## Features
+**Application:** Java 17, Spring Boot, Spring Security, Thymeleaf, H2 Database, Maven
 
-- Full-Stack Application
-- UI components created with Thymeleaf and styled with Twitter Bootstrap
-- Authentication and authorization using Spring Security
-  - Authentication by allowing the users to authenticate with a username and password
-  - Authorization by granting different permissions based on the roles (non-members, users, and managers)
-- Different roles (non-members, users, and managers) with varying levels of permissions
-  - Non-members only can see the boardgame lists and reviews
-  - Users can add board games and write reviews
-  - Managers can edit and delete the reviews
-- Deployed the application on AWS EC2
-- JUnit test framework for unit testing
-- Spring MVC best practices to segregate views, controllers, and database packages
-- JDBC for database connectivity and interaction
-- CRUD (Create, Read, Update, Delete) operations for managing data in the database
-- Schema.sql file to customize the schema and input initial data
-- Thymeleaf Fragments to reduce redundancy of repeating HTML elements (head, footer, navigation)
+**DevOps Tools:** Jenkins, Docker, Kubernetes, SonarQube, Trivy, Nexus, Prometheus, Grafana, Git
 
-## How to Run
+**Infrastructure:** AWS EC2
 
-1. Clone the repository
-2. Open the project in your IDE of choice
-3. Run the application
-4. To use initial user data, use the following credentials.
-  - username: bugs    |     password: bunny (user role)
-  - username: daffy   |     password: duck  (manager role)
-5. You can also sign-up as a new user and customize your role to play with the application! 😊
+## CI/CD Pipeline Architecture
+
+![Build Architecture](Proof_of_Work/Build_architecture%20(1).png)
+
+### Pipeline Stages
+
+1. **Git Fetch** → Clone source code
+2. **Compile & Test** → Maven compile and unit tests
+3. **Security Scan** → Trivy filesystem scan
+4. **Code Quality** → SonarQube analysis
+5. **Build** → Maven package to JAR
+6. **Artifact Management** → Upload to Nexus
+7. **Containerization** → Docker build and scan
+8. **Registry Push** → Push to Docker Hub
+9. **Deploy** → Kubernetes deployment
+10. **Verify** → Health check pods and services
+11. **Notify** → Email build results
+
+### Jenkins Pipeline Execution
+
+![Jenkins Build Pipeline](Proof_of_Work/jenkins_Build_pipeline.png)
+
+### Code Quality Analysis
+
+![SonarQube Quality Gate](Proof_of_Work/Sonaraube%20quality%20gate%20passed.png)
+
+### Artifact Repository
+
+![Nexus Repository](Proof_of_Work/Nexus_Repo.png)
+
+### Docker Registry
+
+![Docker Images](Proof_of_Work/Docker_Images_Pushed.png)
+
+### Kubernetes Deployment
+
+![Kubernetes Clusters](Proof_of_Work/kubernets_clusters_running.png)
+
+### Application Running
+
+![Application](Proof_of_Work/application_running.png)
+
+### Monitoring & Alerts
+
+**Prometheus - Metrics Collection**
+![Prometheus](Proof_of_Work/Prometheus.png)
+
+**Grafana - Visualization Dashboard**
+![Grafana](Proof_of_Work/Grafana.png)
+
+### Build Notifications
+
+![Email Notification](Proof_of_Work/Post_Build_result_mail.png)
+
+## Quick Start
+
+### Local Development
+
+```bash
+# Clone and build
+git clone https://github.com/25kamalesh/BoardGame.git
+cd BoardGame
+mvn clean package
+
+# Run application
+java -jar target/database_service_project-0.0.7.jar
+
+# Access at http://localhost:8080
+# User credentials: bugs/bunny
+# Manager credentials: daffy/duck
+```
+
+### Docker Deployment
+
+```bash
+docker build -t boardgame:latest .
+docker run -p 8080:8080 boardgame:latest
+```
+
+### Kubernetes Deployment
+
+```bash
+kubectl apply -f deployment-service.yaml
+kubectl get pods -n webapps
+kubectl get svc -n webapps
+```
+
+## Project Structure
+
+```
+├── src/main/java/com/javaproject/
+│   ├── beans/              # Data models
+│   ├── controllers/        # MVC controllers
+│   ├── database/           # Database layer
+│   └── security/           # Security config
+├── src/main/resources/
+│   ├── templates/          # Thymeleaf views
+│   ├── static/             # CSS, JS
+│   └── schema.sql
+├── Dockerfile              # Container image
+├── deployment-service.yaml # K8s manifests
+├── JenkinsFIle            # CI/CD pipeline
+└── pom.xml                # Maven config
+```
+
+## Key Features
+
+**Security:**
+- Spring Security with role-based access
+- Trivy vulnerability scanning
+- SonarQube code analysis
+
+**Automation:**
+- Complete CI/CD with Jenkins
+- Automated testing and deployment
+- Email notifications
+
+**Monitoring:**
+- Prometheus for metrics collection
+- Grafana dashboards for visualization
+- Real-time application monitoring
+
+**Infrastructure:**
+- Docker containerization
+- Kubernetes orchestration with 2 replicas
+- LoadBalancer service for high availability
+
+## Author
+
+**Kamalesh B**
+- GitHub: [@25kamalesh](https://github.com/25kamalesh)
+- Email: kamaleshb.2004@gmail.com
+
+---
+
+*This project demonstrates production-ready DevOps practices for Java applications.*
